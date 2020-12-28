@@ -1,0 +1,24 @@
+
+- name: Install apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: present
+
+- name: Import Bacula key from bacula.org
+  apt_key:
+    state: present
+    url: https://www.bacula.org/downloads/Bacula-4096-Distribution-Verification-key.asc
+
+- name: Upload repo template
+  template:
+    src: etc/apt/sources.list.d/bacula.list
+    dest: /etc/apt/sources.list.d/bacula.list
+    owner: root
+    group: root
+    mode: 644
+
+- name: Choose packages
+  set_fact:
+    install_packages:
+      - bacula-client
+      - bacula-libs

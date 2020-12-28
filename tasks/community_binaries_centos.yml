@@ -1,0 +1,36 @@
+
+- name: Import Bacula key from bacula.org
+  rpm_key:
+    state: present
+    key: https://www.bacula.org/downloads/Bacula-4096-Distribution-Verification-key.asc
+
+- name: Upload repo template
+  template:
+    src: etc/yum.repos.d/bacula.repo
+    dest: /etc/yum.repos.d/bacula.repo
+    owner: root
+    group: root
+    mode: 644
+
+- name: Stat config dir
+  stat:
+    path: "/etc/bacula"
+  register: bacula_config_dir
+
+- name: Move old config dir
+  command: mv /etc/bacula /etc/bacula.old
+  when: "bacula_config_dir.stat.islnk is defined and bacula_config_dir.stat.islnk == False"
+
+- name: Symbolic link new config dir
+  file:
+    src: /opt/bacula/etc
+    dest: /etc/bacula
+    owner: root
+    group: root
+    state: link
+
+- name: Choose packages
+  set_fact:
+    install_packages:
+      - bacula-client
+      - bacula-libs

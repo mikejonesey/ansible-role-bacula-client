@@ -1,0 +1,7 @@
+{% if ansible_distribution == 'Debian' %}
+# Bacula Community Debian
+deb http://www.bacula.org/packages/{{ bacula_community_key }}/debs/{{ bacula_community_version }}/{{ ansible_distribution_release }}/amd64/ {{ ansible_distribution_release }} main
+{% elif ansible_distribution == 'Ubuntu' %}
+# Bacula Community Ubuntu
+deb [arch=amd64] http://www.bacula.org/packages/{{ bacula_community_key }}/debs/{{ bacula_community_version }}/{{ ansible_distribution_release }}/amd64/ {{ ansible_distribution_release }} main
+{% endif %}

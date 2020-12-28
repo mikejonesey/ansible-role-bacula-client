@@ -1,31 +1,66 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+Install and add basic configuration for the bacula-fd agent. The role supports Debian, Ubuntu and CentOS.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+1. passwordstore (sudo apt-get install pass), https://docs.ansible.com/ansible/latest/collections/community/general/passwordstore_lookup.html
+passwords for fd agents are stored locally in pass db (gpg encrypted).
+
+2. A bacula server, this role is for the agent only, not the server. The role will whitelist the server defined using var "bacula_server_address"
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+All variables used are defined in the defaults file, which can be overriden in either host_var or group_var;
+
+All variables specific to this roll are prepended with "bacula_client_"
+
+#### Must overide variables ####
+
+    none
+
+#### Optional to overide variables ####
+
+The Agent Name (defaults auto-generated)
+
+    bacula_client_name: "fd-{{ ansible_hostname }}"
+    
+Bacula Dir name defined in bacula server, this is the same across all of your agents.
+
+    bacula_server_dir: "dir-name"
+    
+switch from OS packages to bacula systems comminity packages, define the community version and key 
+    
+    bacula_community_binaries: yes
+    bacula_community_version: "9.4.2"
+    bacula_community_key: "xxxxxxxxxxxxx"
+
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+The following roles can be run prior to installing agents, or use other roles for these tasks...
+
+roles:
+ - bacula = setup and configure a bacula server (not required to run this role, but useless without).
+
+optional roles:
+ - local-password-store = setup and configure "pass" tool locally for use with ansible to store passwords.
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Play can target any host in inventory.
 
-    - hosts: servers
+    - hosts: all
+      become: yes
       roles:
-         - { role: username.rolename, x: 42 }
+        - bacula-client
+      tags: bacula,backup
+
 
 License
 -------
@@ -35,4 +70,4 @@ BSD
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Michael Jones <mj@mikejonesey.co.uk>

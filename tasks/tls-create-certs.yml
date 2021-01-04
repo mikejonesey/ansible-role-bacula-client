@@ -1,0 +1,30 @@
+
+# Actions on DIR Server
+- name: Create Agent Certs
+  delegate_to: "{{ groups['bacula'][0] }}"
+  shell: >
+    ./easyrsa build-serverClient-full "{{ bacula_client_tls_fqdn }}" nopass
+  args:
+    creates: /etc/bacula/easyrsa/pki/issued/{{ bacula_client_tls_fqdn }}.crt
+    chdir: /etc/bacula/easyrsa
+
+- name: Download CA Cert
+  delegate_to: "{{ groups['bacula'][0] }}"
+  fetch:
+    src: /etc/bacula/easyrsa/pki/ca.crt
+    dest: big-files-not-in-git/bacula-certs/
+    flat: yes
+
+- name: Download Agent Cert
+  delegate_to: "{{ groups['bacula'][0] }}"
+  fetch:
+    src: "/etc/bacula/easyrsa/pki/issued/{{ bacula_client_tls_fqdn }}.crt"
+    dest: big-files-not-in-git/bacula-certs/
+    flat: yes
+
+- name: Download Agent Key
+  delegate_to: "{{ groups['bacula'][0] }}"
+  fetch:
+    src: "/etc/bacula/easyrsa/pki/private/{{ bacula_client_tls_fqdn }}.key"
+    dest: big-files-not-in-git/bacula-certs/
+    flat: yes

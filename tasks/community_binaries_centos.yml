@@ -21,16 +21,20 @@
   command: mv /etc/bacula /etc/bacula.old
   when: "bacula_config_dir.stat.islnk is defined and bacula_config_dir.stat.islnk == False"
 
-- name: Symbolic link new config dir
-  file:
-    src: /opt/bacula/etc
-    dest: /etc/bacula
-    owner: root
-    group: root
-    state: link
-
 - name: Choose packages
   set_fact:
     install_packages:
       - bacula-client
       - bacula-libs
+
+- name: Create STD DIRs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: bacula
+    mode: 0770
+  with_items:
+    - /var/lib/bacula
+    - /usr/lib/bacula
+    - /var/spool/bacula

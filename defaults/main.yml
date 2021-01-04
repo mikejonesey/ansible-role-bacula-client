@@ -5,6 +5,9 @@ bacula_server_dir: "dir-name"
 
 bacula_client_name: "fd-{{ ansible_hostname }}"
 
+bacula_client_tls_enable: no
+bacula_client_tls_fqdn: "{{ ansible_host }}"
+
 ##################################################
 # Use commitity binaries from bacula systems?
 

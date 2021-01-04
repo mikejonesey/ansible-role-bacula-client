@@ -1,6 +1,14 @@
 ---
 # tasks file for bacula-client
 
+- name: Print info
+  debug:
+    msg: "{{ msg.split('\n') }}"
+  vars:
+    msg: |
+      Setting up agent: {{ bacula_client_name }}
+      with TLS: {{ bacula_client_tls_enable }}
+
 - name: collect facts about system services
   service_facts:
   register: services_state
@@ -18,6 +26,15 @@
     name: "{{ install_packages }}"
     state: latest
 
+- name: Symbolic link new config dir
+  file:
+    src: /opt/bacula/etc
+    dest: /etc/bacula
+    owner: root
+    group: root
+    state: link
+  when: "bacula_community_binaries|bool == True"
+
 - name: Gen a password for FD
   set_fact:
     bacula_client_pass: "{{ lookup('passwordstore', 'bacula/{{ inventory_hostname }}/fd directory={{ password_fullpath }} create=true length=12 overwrite=no')}}"
@@ -26,7 +43,13 @@
   template:
     src: etc/bacula/bacula-fd.conf
     dest: /etc/bacula/bacula-fd.conf
-  when: "ansible_distribution == 'CentOS'"
+  when: "ansible_distribution == 'CentOS' and bacula_community_binaries|bool == False"
+
+- name: Update FD Template
+  template:
+    src: etc/bacula/bacula-fd-9.conf
+    dest: /etc/bacula/bacula-fd.conf
+  when: "ansible_distribution == 'CentOS' and bacula_community_binaries|bool == True"
 
 - name: Update FD Template
   template:
@@ -34,9 +57,13 @@
     dest: /etc/bacula/bacula-fd.conf
   when: "ansible_os_family == 'Debian'"
 
-- name: Print FD name and pass
-  debug:
-    msg: "FD Name: {{ bacula_client_name }}  Password:  {{ bacula_client_pass }}"
+- name: Setup TLS Certs
+  include_tasks: tls-create-certs.yml
+  when: "bacula_client_tls_enable|bool == True"
+
+- name: Setup Agent with TLS
+  include_tasks: tls-setup.yml
+  when: "bacula_client_tls_enable|bool == True"
 
 - name: Start and enable client
   systemd:
@@ -44,10 +71,53 @@
     state: started
     enabled: yes
 
-- name: add firewalld rule
+- name: Allow new incoming Agent Connections
   firewalld:
     source: "{{ bacula_server_address }}/32"
     zone: internal
     state: enabled
     permanent: true
-  when: "services_state.ansible_facts.services['firewalld.service'].status == 'enabled'"
+  when: "services_state.ansible_facts.services['firewalld.service'] is defined and services_state.ansible_facts.services['firewalld.service'].status == 'enabled'"
+
+- name: Choose Port
+  set_fact:
+    bacula_agent_port: "9112"
+  when: "bacula_client_tls_enable|bool == True"
+
+- name: Choose Port
+  set_fact:
+    bacula_agent_port: "9102"
+  when: "bacula_client_tls_enable|bool == False"
+
+- name: Allow new incoming Agent Connections
+  firewalld:
+    port: "{{ bacula_agent_port }}/tcp"
+    zone: internal
+    state: enabled
+    permanent: true
+  when: "services_state.ansible_facts.services['firewalld.service'] is defined and services_state.ansible_facts.services['firewalld.service'].status == 'enabled'"
+
+- name: Allow new incoming Agent Connections
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    source: "{{ bacula_server_address }}/32"
+    destination_port: "{{ bacula_agent_port }}"
+    ctstate: NEW
+    syn: match
+    jump: ACCEPT
+    comment: Accept Bacula Agent connections.
+    action: insert
+  when: "services_state.ansible_facts.services['iptables.service'] is defined and services_state.ansible_facts.services['iptables.service'].status == 'enabled'"
+
+- name: Print FD name and pass
+  debug:
+    msg: "{{ msg.split('\n') }}"
+  vars:
+    msg: |
+      You can now setup:
+      FD Name: {{ bacula_client_name }}  Password:  {{ bacula_client_pass }}
+      with certs:
+      - /etc/bacula/easyrsa/pki/ca.crt
+      - /etc/bacula/easyrsa/pki/issued/{{ bacula_client_tls_fqdn }}.crt
+      - /etc/bacula/easyrsa/pki/private/{{ bacula_client_tls_fqdn }}.key

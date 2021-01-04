@@ -1,0 +1,33 @@
+
+# Actions on Agent Server
+- name: Create Certs Dir
+  file:
+    path: /etc/bacula/ssl
+    state: directory
+    owner: root
+    group: bacula
+    mode: 0750
+
+- name: Upload CA Cert
+  copy:
+    src: big-files-not-in-git/bacula-certs/ca.crt
+    dest: /etc/bacula/ssl/ca.crt
+    owner: root
+    group: bacula
+    mode: 0640
+
+- name: Upload Agent Cert
+  copy:
+    src: big-files-not-in-git/bacula-certs/{{ bacula_client_tls_fqdn }}.crt
+    dest: /etc/bacula/ssl/{{ bacula_client_tls_fqdn }}.crt
+    owner: root
+    group: bacula
+    mode: 0640
+
+- name: Upload Agent Key
+  copy:
+    src: big-files-not-in-git/bacula-certs/{{ bacula_client_tls_fqdn }}.key
+    dest: /etc/bacula/ssl/{{ bacula_client_tls_fqdn }}.key
+    owner: root
+    group: bacula
+    mode: 0640

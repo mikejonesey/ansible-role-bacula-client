@@ -13,6 +13,16 @@
   service_facts:
   register: services_state
 
+- name: Uninstall old versions
+  package:
+    name: "{{ remove_packages }}"
+    state: absent
+  vars:
+    remove_packages:
+      - bacula-client
+      - bacula-common
+      - bacula-libs
+
 - name: Install Bacula FD (Client)
   package:
     name: "{{ install_packages }}"

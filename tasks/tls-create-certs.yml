@@ -3,7 +3,8 @@
 - name: Create Agent Certs
   delegate_to: "{{ groups['bacula'][0] }}"
   shell: >
-    ./easyrsa build-serverClient-full "{{ bacula_client_tls_fqdn }}" nopass
+    ./easyrsa build-serverClient-full "{{ bacula_client_tls_fqdn }}" nopass;
+    find /etc/bacula/easyrsa -type f -uid 0 -exec chown bacula: '{}' \;
   args:
     creates: /etc/bacula/easyrsa/pki/issued/{{ bacula_client_tls_fqdn }}.crt
     chdir: /etc/bacula/easyrsa

@@ -13,14 +13,6 @@
   service_facts:
   register: services_state
 
-- name: Setup community binaries for Debian
-  include_tasks: community_binaries_debian.yml
-  when: "bacula_community_binaries|bool == True and ansible_os_family == 'Debian' and ansible_architecture == 'x86_64' and ansible_distribution_release in bacula_community_deb_releases"
-
-- name: Setup community binaries for CentOS
-  include_tasks: community_binaries_centos.yml
-  when: "bacula_community_binaries|bool == True and ansible_distribution == 'CentOS' and ansible_architecture == 'x86_64'"
-
 - name: Install Bacula FD (Client)
   package:
     name: "{{ install_packages }}"
@@ -33,7 +25,6 @@
     owner: root
     group: root
     state: link
-  when: "bacula_community_binaries|bool == True"
 
 - name: Gen a password for FD
   set_fact:
@@ -43,19 +34,6 @@
   template:
     src: etc/bacula/bacula-fd.conf
     dest: /etc/bacula/bacula-fd.conf
-  when: "ansible_distribution == 'CentOS' and bacula_community_binaries|bool == False"
-
-- name: Update FD Template
-  template:
-    src: etc/bacula/bacula-fd-9.conf
-    dest: /etc/bacula/bacula-fd.conf
-  when: "ansible_distribution == 'CentOS' and bacula_community_binaries|bool == True"
-
-- name: Update FD Template
-  template:
-    src: etc/bacula/bacula-fd-9.conf
-    dest: /etc/bacula/bacula-fd.conf
-  when: "ansible_os_family == 'Debian'"
 
 - name: Setup TLS Certs
   include_tasks: tls-create-certs.yml

@@ -13,6 +13,5 @@ bacula_client_tls_fqdn: "{{ ansible_host }}"
 # overwritten in playbook logic for community
 bacula_client_install_packages:
  - bacula-client
- - bacula-common
 
 ##################################################

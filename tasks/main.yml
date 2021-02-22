@@ -23,18 +23,33 @@
       - bacula-common
       - bacula-libs
 
+# Debian variants use main repo
 - name: Install Bacula FD (Client)
   package:
     name: "{{ bacula_client_install_packages }}"
     state: latest
-  when: "ansible_os_family != 'Debian'"
+  when: "ansible_os_family == 'Debian' and ansible_architecture == 'x86_64'"
 
+# Epel variants use repo selection
+- name: Install Bacula FD (Client)
+  yum:
+    name: "{{ bacula_client_install_packages }}"
+    state: latest
+    disablerepo: "*"
+    enablerepo: "Bacula-Community"
+  when: "ansible_os_family == 'RedHat' and ansible_architecture == 'x86_64'"
+
+# other OS, or unsupported arch for example arm use their OS repos (older client version)
 - name: Install Bacula FD (Client)
   package:
     name: "{{ bacula_client_install_packages }}"
     state: latest
-    default_release: "{{ ansible_distribution_release }}-backports"
-  when: "ansible_os_family == 'Debian'"
+  when: "(ansible_os_family != 'Debian' and ansible_os_family != 'RedHat') or ansible_architecture != 'x86_64'"
+
+- name: Stat community install
+  ansible.builtin.stat:
+    path: /opt/bacula
+  register: community_install    
 
 - name: Symbolic link new config dir
   file:
@@ -43,7 +58,7 @@
     owner: root
     group: root
     state: link
-  when: "ansible_distribution == 'CentOS'"
+  when: "community_install.stat.exists"
 
 - name: Gen a password for FD
   set_fact:
